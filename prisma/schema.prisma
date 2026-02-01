@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 1. USUARIOS (Para tu Login y Admin)
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String   // Se guardará encriptada
+  nombre    String
+  role      String   @default("user") // "admin" o "user"
+  createdAt DateTime @default(now())
+  orders    Order[]
+}
+
+// 2. PRODUCTOS (Adaptado a tus archivos .js actuales)
+model Product {
+  id              Int      @id @default(autoincrement())
+  nombre          String
+  precio          Float
+  stock           Int
+  categoria       String   // "Motos", "Autos", "Hot Wheels", "Accesorios"
+  
+  // Guardaremos tus objetos complejos como JSON
+  imagenes        Json     // { "principal": "url...", "galeria": [...] }
+  caracteristicas String[] //Array de strings ["Metal", "Goma"]
+  
+  // Campos opcionales (porque no todos los productos tienen todo)
+  descripcion     String?
+  marca           String?
+  fabricante      String?
+  escala          String?
+  serie           String?
+  materiales      String?
+  medidasCaja     Json?    // { "texto": "30x20cm" }
+
+  destacado       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt // Se actualiza solo al editar
+  
+  orderItems      OrderItem[]
+}
+
+// 3. PEDIDOS (Para el historial)
+model Order {
+  id        Int         @id @default(autoincrement())
+  userId    Int
+  user      User        @relation(fields: [userId], references: [id])
+  total     Float
+  estado    String      @default("Pendiente") // "Pendiente", "Enviado", "Entregado"
+  createdAt DateTime    @default(now())
+  items     OrderItem[]
+}
+
+// 4. DETALLE DEL PEDIDO
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+  cantidad  Int
+  precio    Float   // Precio al momento de la compra
+}
