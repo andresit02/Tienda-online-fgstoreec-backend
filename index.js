@@ -2,7 +2,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-// 1. IMPORTAMOS PRISMA PARA PODER HABLAR CON LA BASE DE DATOS
+// 1. IMPORTAMOS PRISMA
 import { PrismaClient } from '@prisma/client';
 
 dotenv.config();
@@ -21,20 +21,25 @@ app.get('/', (req, res) => {
   res.send('✅ API FG Store Online funcionando correctamente');
 });
 
-// --- RUTA PRINCIPAL: OBTENER TODOS LOS PRODUCTOS ---
-// Esta es la URL que llamará tu Frontend: http://localhost:3000/api/productos
+// --- 1. OBTENER TODOS (LEER) ---
 app.get('/api/productos', async (req, res) => {
   try {
-    // Le pedimos a Prisma que busque TODOS los productos en Supabase
-    const productos = await prisma.product.findMany();
+    // MEJORA: Agregamos { orderBy: { id: 'asc' } }
+    // Esto hace que los productos siempre salgan en orden (1, 2, 3...)
+    // y no salten de lugar cuando los edites.
+    const productos = await prisma.product.findMany({
+      orderBy: {
+        id: 'asc',
+      },
+    });
     res.json(productos);
   } catch (error) {
     console.error("Error al obtener productos:", error);
-    res.status(500).json({ error: 'Error al obtener productos de la base de datos' });
+    res.status(500).json({ error: 'Error al obtener productos' });
   }
 });
 
-// --- RUTA PARA CREAR PRODUCTOS (Para tu futuro Dashboard Admin) ---
+// --- 2. CREAR PRODUCTO (AGREGAR) ---
 app.post('/api/productos', async (req, res) => {
   try {
     const nuevoProducto = await prisma.product.create({
@@ -44,6 +49,37 @@ app.post('/api/productos', async (req, res) => {
   } catch (error) {
     console.error("Error al crear producto:", error);
     res.status(500).json({ error: 'Error al crear producto' });
+  }
+});
+
+// --- 3. ACTUALIZAR PRODUCTO (EDITAR) ---
+// Esta ruta recibe el ID (ej: /api/productos/5) y los datos nuevos
+app.put('/api/productos/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const productoActualizado = await prisma.product.update({
+      where: { id: parseInt(id) }, // Buscamos por ID
+      data: req.body // Actualizamos con lo que nos envíe el Dashboard
+    });
+    res.json(productoActualizado);
+  } catch (error) {
+    console.error("Error al actualizar producto:", error);
+    res.status(500).json({ error: 'Error al actualizar producto' });
+  }
+});
+
+// --- 4. ELIMINAR PRODUCTO (BORRAR) ---
+// Esta ruta recibe el ID y lo borra de Supabase
+app.delete('/api/productos/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await prisma.product.delete({
+      where: { id: parseInt(id) }
+    });
+    res.json({ message: 'Producto eliminado correctamente' });
+  } catch (error) {
+    console.error("Error al eliminar producto:", error);
+    res.status(500).json({ error: 'Error al eliminar producto' });
   }
 });
 
