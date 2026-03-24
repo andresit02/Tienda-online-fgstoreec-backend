@@ -1,14 +1,13 @@
-// index.js
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-// 1. IMPORTAMOS PRISMA
 import { PrismaClient } from '@prisma/client';
+import authRoutes from './auth/auth.routes.js';
+import { authenticateToken, authorizeRoles } from './auth/auth.middleware.js';
 
 dotenv.config();
 
 const app = express();
-// 2. INICIALIZAMOS LA CONEXIÓN
 const prisma = new PrismaClient(); 
 
 const PORT = process.env.PORT || 3000;
@@ -16,17 +15,27 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Rutas de autenticación
+app.use('/api/auth', authRoutes);
+
 // --- RUTA DE PRUEBA ---
 app.get('/', (req, res) => {
   res.send('✅ API FG Store Online funcionando correctamente');
 });
 
+// Ejemplo de ruta protegida (solo para usuarios autenticados)
+app.get('/api/protected', authenticateToken, (req, res) => {
+  res.json({ message: `Bienvenido, ${req.user.nombre}! Tienes acceso a esta ruta protegida.` });
+});
+
+// Ejemplo de ruta protegida con rol (solo para administradores)
+app.get('/api/admin', authenticateToken, authorizeRoles(['admin']), (req, res) => {
+  res.json({ message: `Bienvenido, administrador ${req.user.nombre}! Tienes acceso a la ruta de administración.` });
+});
+
 // --- 1. OBTENER TODOS (LEER) ---
 app.get('/api/productos', async (req, res) => {
   try {
-    // MEJORA: Agregamos { orderBy: { id: 'asc' } }
-    // Esto hace que los productos siempre salgan en orden (1, 2, 3...)
-    // y no salten de lugar cuando los edites.
     const productos = await prisma.product.findMany({
       orderBy: {
         id: 'asc',
@@ -40,7 +49,8 @@ app.get('/api/productos', async (req, res) => {
 });
 
 // --- 2. CREAR PRODUCTO (AGREGAR) ---
-app.post('/api/productos', async (req, res) => {
+// Protegida: solo administradores pueden crear productos
+app.post('/api/productos', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
   try {
     const nuevoProducto = await prisma.product.create({
       data: req.body
@@ -53,13 +63,13 @@ app.post('/api/productos', async (req, res) => {
 });
 
 // --- 3. ACTUALIZAR PRODUCTO (EDITAR) ---
-// Esta ruta recibe el ID (ej: /api/productos/5) y los datos nuevos
-app.put('/api/productos/:id', async (req, res) => {
+// Protegida: solo administradores pueden actualizar productos
+app.put('/api/productos/:id', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
   const { id } = req.params;
   try {
     const productoActualizado = await prisma.product.update({
-      where: { id: parseInt(id) }, // Buscamos por ID
-      data: req.body // Actualizamos con lo que nos envíe el Dashboard
+      where: { id: parseInt(id) }, 
+      data: req.body 
     });
     res.json(productoActualizado);
   } catch (error) {
@@ -69,8 +79,8 @@ app.put('/api/productos/:id', async (req, res) => {
 });
 
 // --- 4. ELIMINAR PRODUCTO (BORRAR) ---
-// Esta ruta recibe el ID y lo borra de Supabase
-app.delete('/api/productos/:id', async (req, res) => {
+// Protegida: solo administradores pueden eliminar productos
+app.delete('/api/productos/:id', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
   const { id } = req.params;
   try {
     await prisma.product.delete({

@@ -15,7 +15,9 @@ model User {
   nombre    String
   role      String   @default("user") // "admin" o "user"
   createdAt DateTime @default(now())
-  orders    Order[]
+  isVerified        Boolean   @default(false) // Nuevo campo para verificación de correo
+  verificationToken String?   // Nuevo campo para el token de verificación
+  orders            Order[]
 }
 
 // 2. PRODUCTOS (Adaptado a tus archivos .js actuales)
