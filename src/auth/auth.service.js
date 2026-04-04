@@ -63,4 +63,52 @@ const verifyEmail = async (token) => {
   return true;
 };
 
-export { registerUser, loginUser, verifyEmail };
+const forgotPassword = async (email) => {
+  const user = await prisma.user.findUnique({ where: { email } });
+
+  if (!user) {
+    throw new Error('No existe un usuario con ese correo electrónico.');
+  }
+
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  const resetExpires = new Date(Date.now() + 3600000); // 1 hora de validez
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      resetPasswordToken: resetToken,
+      resetPasswordExpires: resetExpires,
+    },
+  });
+
+  await sendResetPasswordEmail(user.email, resetToken);
+  return true;
+};
+
+const resetPassword = async (token, newPassword) => {
+  const user = await prisma.user.findFirst({
+    where: {
+      resetPasswordToken: token,
+      resetPasswordExpires: { gt: new Date() },
+    },
+  });
+
+  if (!user) {
+    throw new Error('Token de recuperación inválido o expirado.');
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      password: hashedPassword,
+      resetPasswordToken: null,
+      resetPasswordExpires: null,
+    },
+  });
+
+  return true;
+};
+
+export { registerUser, loginUser, verifyEmail, forgotPassword, resetPassword };

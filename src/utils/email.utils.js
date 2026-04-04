@@ -31,4 +31,23 @@ const sendVerificationEmail = async (to, token) => {
   await transporter.sendMail(mailOptions);
 };
 
-export { sendVerificationEmail };
+const sendResetPasswordEmail = async (to, token) => {
+  const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+
+  const mailOptions = {
+    from: process.env.EMAIL_SERVICE_USER,
+    to,
+    subject: 'Recuperación de Contraseña - FGSTOREEC',
+    html: `
+      <h1>Recuperación de Contraseña</h1>
+      <p>Has solicitado restablecer tu contraseña. Haz clic en el siguiente enlace para continuar:</p>
+      <a href="${resetUrl}">Restablecer Contraseña</a>
+      <p>Este enlace expirará en 1 hora.</p>
+      <p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+};
+
+export { sendVerificationEmail, sendResetPasswordEmail };

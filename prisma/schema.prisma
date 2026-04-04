@@ -17,6 +17,8 @@ model User {
   createdAt DateTime @default(now())
   isVerified        Boolean   @default(false) // Nuevo campo para verificación de correo
   verificationToken String?   // Nuevo campo para el token de verificación
+  resetPasswordToken String? // Token para recuperación de contraseña
+  resetPasswordExpires DateTime? // Expiración del token de recuperación
   orders            Order[]
 }
 

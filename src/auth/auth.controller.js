@@ -1,4 +1,4 @@
-import { registerUser, loginUser, verifyEmail } from './auth.service.js';
+import { registerUser, loginUser, verifyEmail, forgotPassword, resetPassword } from './auth.service.js';
 
 const register = async (req, res) => {
   try {
@@ -30,4 +30,24 @@ const verify = async (req, res) => {
   }
 };
 
-export { register, login, verify };
+const forgot = async (req, res) => {
+  try {
+    const { email } = req.body;
+    await forgotPassword(email);
+    res.status(200).json({ message: 'Se ha enviado un correo de recuperación.' });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const reset = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    await resetPassword(token, newPassword);
+    res.status(200).json({ message: 'Contraseña actualizada exitosamente.' });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export { register, login, verify, forgot, reset };
