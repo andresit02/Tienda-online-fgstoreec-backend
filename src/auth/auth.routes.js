@@ -1,12 +1,9 @@
 import { Router } from 'express';
-import { register, login, verify, forgot, reset } from './auth.controller.js';
+import { syncUser, checkEmail } from './auth.controller.js';
 
 const router = Router();
 
-router.post('/register', register);
-router.post('/login', login);
-router.get('/verify-email', verify);
-router.post('/forgot-password', forgot);
-router.post('/reset-password', reset);
+router.post('/sync', syncUser);
+router.post('/check-email', checkEmail); // Conectamos la nueva ruta
 
 export default router;

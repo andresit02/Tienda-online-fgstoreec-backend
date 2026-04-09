@@ -1,53 +1,43 @@
-import { registerUser, loginUser, verifyEmail, forgotPassword, resetPassword } from './auth.service.js';
+import { PrismaClient } from '@prisma/client';
+import { generateToken } from '../utils/jwt.utils.js';
+const prisma = new PrismaClient();
 
-const register = async (req, res) => {
+export const syncUser = async (req, res) => {
+  const { email, nombre, supabase_id } = req.body;
+
   try {
-    const { email, password, nombre } = req.body;
-    const user = await registerUser(email, password, nombre);
-    res.status(201).json({ message: 'Usuario registrado exitosamente. Por favor, verifica tu correo electrónico.', user: { id: user.id, email: user.email, nombre: user.nombre } });
+    let user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          email,
+          nombre,
+          password: 'oauth-or-otp-dummy-pass', // SOLUCIÓN: Evita que Prisma colapse con usuarios de Google
+          isVerified: true, 
+          role: 'user'
+        }
+      });
+    }
+
+    const token = generateToken({ userId: user.id, role: user.role });
+
+    res.status(200).json({
+      user: { id: user.id, email: user.email, nombre: user.nombre, role: user.role },
+      token
+    });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error('Error en syncUser:', error);
+    res.status(500).json({ error: 'Error al sincronizar el perfil del usuario' });
   }
 };
 
-const login = async (req, res) => {
+// NUEVA FUNCIÓN: Verifica si el correo ya existe en tu BD
+export const checkEmail = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const { user, token } = await loginUser(email, password);
-    res.status(200).json({ message: 'Inicio de sesión exitoso', user: { id: user.id, email: user.email, nombre: user.nombre, role: user.role }, token });
+    const user = await prisma.user.findUnique({ where: { email: req.body.email } });
+    res.status(200).json({ exists: !!user }); // Devuelve true si existe, false si no
   } catch (error) {
-    res.status(401).json({ error: error.message });
+    res.status(500).json({ error: 'Error verificando correo' });
   }
 };
-
-const verify = async (req, res) => {
-  try {
-    const { token } = req.query;
-    await verifyEmail(token);
-    res.status(200).json({ message: 'Correo electrónico verificado exitosamente.' });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
-
-const forgot = async (req, res) => {
-  try {
-    const { email } = req.body;
-    await forgotPassword(email);
-    res.status(200).json({ message: 'Se ha enviado un correo de recuperación.' });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
-
-const reset = async (req, res) => {
-  try {
-    const { token, newPassword } = req.body;
-    await resetPassword(token, newPassword);
-    res.status(200).json({ message: 'Contraseña actualizada exitosamente.' });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
-
-export { register, login, verify, forgot, reset };

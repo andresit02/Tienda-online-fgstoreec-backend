@@ -11,16 +11,21 @@ datasource db {
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
-  password  String   // Se guardará encriptada
+  password  String?  // <--- AÑADE EL SIGNO '?' PARA QUE SEA OPCIONAL
   nombre    String
-  role      String   @default("user") // "admin" o "user"
+  role      String   @default("user")
   createdAt DateTime @default(now())
-  isVerified        Boolean   @default(false) // Nuevo campo para verificación de correo
-  verificationToken String?   // Nuevo campo para el token de verificación
-  resetPasswordToken String? // Token para recuperación de contraseña
-  resetPasswordExpires DateTime? // Expiración del token de recuperación
+  isVerified Boolean  @default(true) // <--- CÁMBIALO A TRUE POR DEFECTO (Supabase ya verifica)
+  
+  // Estos campos ya no son estrictamente necesarios con Supabase, 
+  // pero puedes dejarlos como opcionales (?) para no romper nada
+  verificationToken String?   
+  resetPasswordToken String? 
+  resetPasswordExpires DateTime? 
+  
   orders            Order[]
 }
+
 
 // 2. PRODUCTOS (Adaptado a tus archivos .js actuales)
 model Product {
