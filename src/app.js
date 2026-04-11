@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import authRoutes from './auth/auth.routes.js';
 import { authenticateToken, authorizeRoles } from './auth/auth.middleware.js';
+import cartRoutes from './cart/cart.routes.js';
 
 dotenv.config();
 
@@ -17,6 +18,8 @@ app.use(express.json());
 
 // Rutas de autenticación
 app.use('/api/auth', authRoutes);
+
+app.use('/api/cart', cartRoutes);
 
 // --- RUTA DE PRUEBA ---
 app.get('/', (req, res) => {

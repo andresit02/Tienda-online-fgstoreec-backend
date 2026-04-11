@@ -11,23 +11,21 @@ datasource db {
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
-  password  String?  // <--- AÑADE EL SIGNO '?' PARA QUE SEA OPCIONAL
+  password  String?  
   nombre    String
   role      String   @default("user")
   createdAt DateTime @default(now())
-  isVerified Boolean  @default(true) // <--- CÁMBIALO A TRUE POR DEFECTO (Supabase ya verifica)
+  isVerified Boolean  @default(true) 
   
-  // Estos campos ya no son estrictamente necesarios con Supabase, 
-  // pero puedes dejarlos como opcionales (?) para no romper nada
   verificationToken String?   
   resetPasswordToken String? 
   resetPasswordExpires DateTime? 
   
   orders            Order[]
+  cart              Cart?    // NUEVO: Relación con el carrito
 }
 
-
-// 2. PRODUCTOS (Adaptado a tus archivos .js actuales)
+// 2. PRODUCTOS
 model Product {
   id              Int      @id @default(autoincrement())
   nombre          String
@@ -35,11 +33,9 @@ model Product {
   stock           Int
   categoria       String   // "Motos", "Autos", "Hot Wheels", "Accesorios"
   
-  // Guardaremos tus objetos complejos como JSON
   imagenes        Json     // { "principal": "url...", "galeria": [...] }
   caracteristicas String[] //Array de strings ["Metal", "Goma"]
   
-  // Campos opcionales (porque no todos los productos tienen todo)
   descripcion     String?
   marca           String?
   fabricante      String?
@@ -50,9 +46,10 @@ model Product {
 
   destacado       Boolean  @default(false)
   createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt // Se actualiza solo al editar
+  updatedAt       DateTime @updatedAt 
   
   orderItems      OrderItem[]
+  cartItems       CartItem[] // NUEVO: Relación con los items del carrito
 }
 
 // 3. PEDIDOS (Para el historial)
@@ -73,6 +70,28 @@ model OrderItem {
   order     Order   @relation(fields: [orderId], references: [id])
   productId Int
   product   Product @relation(fields: [productId], references: [id])
+  
   cantidad  Int
   precio    Float   // Precio al momento de la compra
+}
+
+// 5. CARRITO DE COMPRAS (Sincronizado)
+model Cart {
+  id        Int        @id @default(autoincrement())
+  userId    Int        @unique // Un carrito activo por usuario
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  id        Int      @id @default(autoincrement())
+  cartId    Int
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId Int      
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cantidad  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
