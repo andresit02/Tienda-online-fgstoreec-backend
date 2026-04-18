@@ -7,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 1. USUARIOS (Para tu Login y Admin)
+// 1. USUARIOS
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
@@ -22,7 +22,8 @@ model User {
   resetPasswordExpires DateTime? 
   
   orders            Order[]
-  cart              Cart?    // NUEVO: Relación con el carrito
+  cart              Cart?    
+  favoritos         Favorito[] // <--- NUEVO: Relación con Favoritos
 }
 
 // 2. PRODUCTOS
@@ -31,10 +32,10 @@ model Product {
   nombre          String
   precio          Float
   stock           Int
-  categoria       String   // "Motos", "Autos", "Hot Wheels", "Accesorios"
+  categoria       String   
   
-  imagenes        Json     // { "principal": "url...", "galeria": [...] }
-  caracteristicas String[] //Array de strings ["Metal", "Goma"]
+  imagenes        Json     
+  caracteristicas String[] 
   
   descripcion     String?
   marca           String?
@@ -42,23 +43,25 @@ model Product {
   escala          String?
   serie           String?
   materiales      String?
-  medidasCaja     Json?    // { "texto": "30x20cm" }
+  medidasCaja     Json?    
+  tipo            String?  
 
   destacado       Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt 
   
   orderItems      OrderItem[]
-  cartItems       CartItem[] // NUEVO: Relación con los items del carrito
+  cartItems       CartItem[] 
+  favoritos       Favorito[] // <--- NUEVO: Relación con Favoritos
 }
 
-// 3. PEDIDOS (Para el historial)
+// 3. PEDIDOS
 model Order {
   id        Int         @id @default(autoincrement())
   userId    Int
   user      User        @relation(fields: [userId], references: [id])
   total     Float
-  estado    String      @default("Pendiente") // "Pendiente", "Enviado", "Entregado"
+  estado    String      @default("Pendiente")
   createdAt DateTime    @default(now())
   items     OrderItem[]
 }
@@ -72,13 +75,13 @@ model OrderItem {
   product   Product @relation(fields: [productId], references: [id])
   
   cantidad  Int
-  precio    Float   // Precio al momento de la compra
+  precio    Float   
 }
 
-// 5. CARRITO DE COMPRAS (Sincronizado)
+// 5. CARRITO DE COMPRAS
 model Cart {
   id        Int        @id @default(autoincrement())
-  userId    Int        @unique // Un carrito activo por usuario
+  userId    Int        @unique 
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   items     CartItem[]
   createdAt DateTime   @default(now())
@@ -94,4 +97,18 @@ model CartItem {
   cantidad  Int      @default(1)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// 6. FAVORITOS / LISTA DE DESEOS (NUEVO)
+model Favorito {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  productId Int
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  // Evita que un usuario guarde el mismo producto dos veces
+  @@unique([userId, productId])
 }
