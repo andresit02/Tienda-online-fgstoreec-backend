@@ -4,18 +4,17 @@ const prisma = new PrismaClient();
 // 1. Obtener el carrito del usuario logueado
 export const getCart = async (req, res) => {
   try {
-    const userId = req.user.userId; // Esto viene de tu middleware de autenticación
+    const userId = req.user.userId;
 
     let cart = await prisma.cart.findUnique({
       where: { userId },
       include: {
         items: {
-          include: { product: true }, // Traemos los detalles del producto (nombre, precio, etc)
+          include: { product: true }, 
         },
       },
     });
 
-    // Si el usuario no tiene carrito aún, le creamos uno vacío silenciosamente
     if (!cart) {
       cart = await prisma.cart.create({
         data: { userId },
@@ -36,31 +35,26 @@ export const addToCart = async (req, res) => {
     const userId = req.user.userId;
     const { productId, cantidad = 1 } = req.body;
 
-    // Buscamos o creamos el carrito
     let cart = await prisma.cart.findUnique({ where: { userId } });
     if (!cart) {
       cart = await prisma.cart.create({ data: { userId } });
     }
 
-    // Verificamos si el producto ya está en el carrito
     const existingItem = await prisma.cartItem.findFirst({
       where: { cartId: cart.id, productId },
     });
 
     if (existingItem) {
-      // Si ya existe, le sumamos la cantidad
       await prisma.cartItem.update({
         where: { id: existingItem.id },
         data: { cantidad: existingItem.cantidad + cantidad },
       });
     } else {
-      // Si no existe, lo creamos
       await prisma.cartItem.create({
         data: { cartId: cart.id, productId, cantidad },
       });
     }
 
-    // Devolvemos el carrito actualizado
     const updatedCart = await prisma.cart.findUnique({
       where: { userId },
       include: { items: { include: { product: true } } },
@@ -106,6 +100,11 @@ export const removeFromCart = async (req, res) => {
 
     res.status(200).json({ message: 'Producto eliminado del carrito' });
   } catch (error) {
+    // --- ESCUDO PROTECTOR PARA DOBLE CLIC ---
+    if (error.code === 'P2025') {
+      return res.status(200).json({ message: 'El producto ya había sido eliminado.' });
+    }
+    
     console.error('Error en removeFromCart:', error);
     res.status(500).json({ error: 'Error al eliminar el producto' });
   }

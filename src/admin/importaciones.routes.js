@@ -19,19 +19,22 @@ router.get('/', authenticateToken, authorizeRoles(['admin']), async (req, res) =
     const data = importaciones.map(imp => {
       let cantidadUnidades = 0;
       let costoTotalLote = 0;
+      let unidadesDisponibles = 0; // <--- NUEVO CÁLCULO
 
       imp.productos.forEach(p => {
          const unidadesVendidas = p.sales.reduce((sum, s) => sum + s.cantidad, 0);
          const unidadesOriginales = p.stock + unidadesVendidas;
 
          cantidadUnidades += unidadesOriginales;
+         unidadesDisponibles += p.stock; // Sumamos lo que queda en bodega
          costoTotalLote += (p.costoUnitario * unidadesOriginales);
       });
 
       return {
         ...imp,
         cantidadModelos: imp.productos.length,
-        cantidadUnidades, 
+        cantidadUnidades,
+        unidadesDisponibles, // <--- LO ENVIAMOS AL FRONTEND
         costoTotalLote
       };
     });
@@ -54,19 +57,32 @@ router.post('/', authenticateToken, authorizeRoles(['admin']), async (req, res) 
   }
 });
 
-// --- CORRECCIÓN: AHORA SÍ GUARDAMOS EL NOMBRE DEL SOCIO EN LA BASE DE DATOS ---
 router.put('/:id/inversion', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
   try {
     const actualizado = await prisma.importation.update({
       where: { id: Number(req.params.id) },
       data: { 
         inversionSocio: Number(req.body.inversionSocio),
-        nombreSocio: req.body.nombreSocio // <--- Esta es la línea mágica que faltaba
+        nombreSocio: req.body.nombreSocio 
       }
     });
     res.json(actualizado);
   } catch (error) {
     res.status(500).json({ error: 'Error al actualizar inversión' });
+  }
+});
+
+// --- NUEVO: EDITAR FECHA DEL LOTE ---
+router.put('/:id/fecha', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
+  try {
+    const actualizado = await prisma.importation.update({
+      where: { id: Number(req.params.id) },
+      // Le agregamos 'T12:00:00Z' para que la zona horaria de Ecuador no te reste un día por accidente
+      data: { fecha: new Date(`${req.body.fecha}T12:00:00Z`) } 
+    });
+    res.json(actualizado);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al actualizar la fecha' });
   }
 });
 
