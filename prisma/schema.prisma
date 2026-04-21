@@ -7,26 +7,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 1. USUARIOS
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
-  password  String?  
+  password  String?
   nombre    String
   role      String   @default("user")
   createdAt DateTime @default(now())
   isVerified Boolean  @default(true) 
   
-  verificationToken String?   
+  verificationToken String?
   resetPasswordToken String? 
   resetPasswordExpires DateTime? 
   
   orders            Order[]
-  cart              Cart?    
-  favoritos         Favorito[] // <--- NUEVO: Relación con Favoritos
+  cart              Cart?
+  favoritos         Favorito[]
 }
 
-// 2. PRODUCTOS
 model Product {
   id              Int      @id @default(autoincrement())
   nombre          String
@@ -52,10 +50,47 @@ model Product {
   
   orderItems      OrderItem[]
   cartItems       CartItem[] 
-  favoritos       Favorito[] // <--- NUEVO: Relación con Favoritos
+  favoritos       Favorito[]
+
+  // --- EXTENSIÓN: IMPORTACIONES Y VENTAS ---
+  activo          Boolean  @default(true) 
+  costoUnitario   Float    @default(0)  
+  
+  importationId   Int?
+  importation     Importation? @relation(fields: [importationId], references: [id])
+  
+  sales           Sale[]
 }
 
-// 3. PEDIDOS
+model Importation {
+  id              Int       @id @default(autoincrement())
+  nombre          String    
+  fecha           DateTime  @default(now())
+  
+  inversionSocio  Float     @default(0) 
+  nombreSocio     String?   @default("Socio") // <--- ESTA ES LA LÍNEA QUE FALTABA
+
+  productos       Product[]
+}
+
+model Sale {
+  id               Int      @id @default(autoincrement())
+  fecha            DateTime @default(now())
+  
+  productId        Int
+  product          Product  @relation(fields: [productId], references: [id])
+  
+  cantidad         Int
+  precioVentaTotal Float
+  tipoEntrega      String   
+  
+  gastosDetalle    Json     
+  totalGastos      Float    @default(0)
+  
+  costoProductoEnVenta Float 
+  gananciaNeta     Float     
+}
+
 model Order {
   id        Int         @id @default(autoincrement())
   userId    Int
@@ -66,7 +101,6 @@ model Order {
   items     OrderItem[]
 }
 
-// 4. DETALLE DEL PEDIDO
 model OrderItem {
   id        Int     @id @default(autoincrement())
   orderId   Int
@@ -78,7 +112,6 @@ model OrderItem {
   precio    Float   
 }
 
-// 5. CARRITO DE COMPRAS
 model Cart {
   id        Int        @id @default(autoincrement())
   userId    Int        @unique 
@@ -99,7 +132,6 @@ model CartItem {
   updatedAt DateTime @updatedAt
 }
 
-// 6. FAVORITOS / LISTA DE DESEOS (NUEVO)
 model Favorito {
   id        Int      @id @default(autoincrement())
   userId    Int
@@ -109,6 +141,15 @@ model Favorito {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  // Evita que un usuario guarde el mismo producto dos veces
   @@unique([userId, productId])
+}
+
+// <--- TABLA PARA CONTROL DE ARRIENDO DEL LOCAL --->
+model RentPayment {
+  id               Int      @id @default(autoincrement())
+  fechaProgramada  DateTime 
+  monto            Float    @default(25.0)
+  estado           String   @default("Pendiente") 
+  fechaPagado      DateTime? 
+  createdAt        DateTime @default(now())
 }
