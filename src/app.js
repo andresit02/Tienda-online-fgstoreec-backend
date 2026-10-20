@@ -39,7 +39,7 @@ app.use('/api/ventas', ventasRoutes);
 app.use('/api/finanzas', finanzasRoutes); // <--- 2. Y ESTO TAMBIÉN FALTABA
 
 app.get('/', (req, res) => {
-  res.send('✅ API FG Store Online funcionando correctamente');
+  res.send('✅ API FGSTOREEC Online funcionando correctamente');
 });
 
 app.get('/api/protected', authenticateToken, (req, res) => {

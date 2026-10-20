@@ -45,10 +45,10 @@ export const INVENTARIO_MOTOS = [
     stock: 0,
     destacado: true,
     imagenes: {
-      principal: "https://res.cloudinary.com/dx0dmthm2/image/upload/v1769156399/imgi_106_store_01JPB7BHTY6WKC6WA5QMHVK4B6_assets_1742713606624-photo_5116222544473600082_y_dxnrdp.jpg",
+      principal: "https://imagenes.fgstoreec.com/MOTOS/kawasaki%20ninja%20h2r%2001.jpg",
       galeria: [
-        "https://res.cloudinary.com/dx0dmthm2/image/upload/v1769156399/imgi_111_store_01JPB7BHTY6WKC6WA5QMHVK4B6_assets_1742713606624-photo_5116222544473600083_y_lz3mcv.jpg",
-        "https://res.cloudinary.com/dx0dmthm2/image/upload/v1769156398/imgi_110_store_01JPB7BHTY6WKC6WA5QMHVK4B6_assets_1742713606623-photo_5116222544473600084_y_r2p5b1.jpg"
+        "https://imagenes.fgstoreec.com/MOTOS/kawasaki%20ninja%20h2r%2002.jpg",
+        "https://imagenes.fgstoreec.com/MOTOS/kawasaki%20ninja%20h2r%2003.jpg"
       ]
     },
     descripcion: "Producto con licencia oficial y empaque original",
